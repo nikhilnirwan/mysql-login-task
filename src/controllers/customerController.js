@@ -1,35 +1,44 @@
 import { pool } from "../db.js";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET, JWT_EXPIRES_IN } from "../config.js";
 
-export const getCoustomer = async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM customer");
-  res.send({ customers: rows });
+export const getUser = async (req, res) => {
+  const [rows] = await pool.query("SELECT * FROM user");
+  res.send({ message: "User get successfully.", user: rows });
 };
 
-export const createCustomers = async (req, res) => {
-  const { name, address, phone } = req.body;
-  const newCustomer = { name, address, phone };
-  const data = await pool.query("INSERT INTO customer set ?", [newCustomer]);
-  res.send("Create data successfully.");
+export const register = async (req, res) => {
+  const { name, address, phone, password } = req.body;
+  const newCustomer = { name, address, phone, password };
+  await pool.query("INSERT INTO user set ?", [newCustomer]);
+  res.send({ message: "Register user successfully." });
 };
 
-export const editCustomer = async (req, res) => {
-  const { id } = req.params;
-  const [result] = await pool.query("SELECT * FROM customer WHERE id = ?", [
-    id,
-  ]);
-  res.send({ customer: result[0] });
-};
-
-export const updateCustomer = async (req, res) => {
+export const updateUser = async (req, res) => {
   const { id } = req.params;
 
   const newCustomer = req.body;
-  await pool.query("UPDATE customer set ? WHERE id = ?", [newCustomer, id]);
-  res.send("Update data successfully");
+  await pool.query("UPDATE user set ? WHERE id = ?", [newCustomer, id]);
+  res.send({ message: "Update data successfully." });
 };
 
-export const deleteCustomer = async (req, res) => {
+export const deleteUser = async (req, res) => {
   const { id } = req.params;
-  const result = await pool.query("DELETE FROM customer WHERE id = ?", [id]);
-  res.send("Delete data successfully.");
+  await pool.query("DELETE FROM user WHERE id = ?", [id]);
+  res.send({ message: "Delete data successfully." });
+};
+
+const signToken = (id) => {
+  return jwt.sign({ id: id }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
+};
+
+export const login = async (req, res) => {
+  const { id } = req.body;
+  const [result] = await pool.query("SELECT * FROM user WHERE id = ?", [id]);
+  res.send({
+    message: "Delete data successfully.",
+    data: { ...result[0], token: signToken(result[0].id) },
+  });
 };
